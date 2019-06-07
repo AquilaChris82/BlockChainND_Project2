@@ -6,7 +6,7 @@ const level = require('level');
 const chainDB = './chaindata';
 const db = level(chainDB);
 
-module.exports = function(){
+//module.exports = function(){
 // Add data to levelDB with key/value pair
 function addLevelDBData(key,value){
   db.put(key, value, function(err) {
@@ -36,25 +36,29 @@ function getLevelDBData(key){
 }
 */
 
-function addDataToLevelDB(key, data) {
-    console.log(data)
+function addDataToLevelDB(value) {
     return new Promise(function(resolve, reject){
-                //let key = 0;
-                let dataArray = [];
+                let i = 0;
                 db.createReadStream()
                 .on('data', function (data) {
-                    dataArray.push(data);
-                    console.log(dataArray)
-                    //key++;
+                    i++;
                 })
                 .on('error', function (err) {
+                    console.log("Alert! Add Data error!")
                     reject(err)
                 })
                 .on('close', function () {
-                    //console.log(dataArray);
-                    // requires key and value
-                    resolve(addLevelDBData(key, dataArray));
+                    console.log('Block #'+i);
+                    addLevelDBData(i, value);
+                    resolve(i);
                 });
             });
   };
-};
+//};
+
+(function theLoop (i) {
+  setTimeout(function () {
+    addDataToLevelDB(i, 'Testing data');
+    if (--i) theLoop(i);
+  }, 100);
+})(10);
