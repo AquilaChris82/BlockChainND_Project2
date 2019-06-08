@@ -4,6 +4,7 @@
 
 const SHA256 = require('crypto-js/sha256');
 const level = require('level');
+
 //const chainDB = './chaindata';
 //const db = level(chainDB);
 
@@ -44,6 +45,8 @@ const level = require('level');
   };
 /*
 
+
+
 /* ===== Block Class ==============================
 |  Class with a constructor for block 			   |
 |  ===============================================*/
@@ -71,20 +74,27 @@ class Block{
 class Blockchain{
   constructor(){
     this.chain = level('./blockchaindata');
-    this.chain.put(0,JSON.stringify(Block.genesisBlock()));
-  }
-
-
-
+    
+    }
+  
+ 
 
   // Add new block
   async addBlock(newBlock){
+
+        //check if genesis block not present (i.e. blockheight = 0) and if so add genesis block
+        let h = await this.getBlockHeight();
+        if (h==0){
+          this.chain.put(0,JSON.stringify(Block.genesisBlock()));
+        }
+        else {
         let minedBlock = await this.mineBlock(newBlock)
             this.chain.put(minedBlock.height,JSON.stringify(minedBlock))
             return minedBlock;
+        }
   }
     
-  async mineBlock(){
+  async mineBlock(newBlock){
         console.log("mining block");
         let l = await this.getBlockHeight();
         let prev = await this.getBlock(l-1);
