@@ -4,9 +4,10 @@
 
 const SHA256 = require('crypto-js/sha256');
 const level = require('level');
-const chainDB = './chaindata';
-const db = level(chainDB);
+//const chainDB = './chaindata';
+//const db = level(chainDB);
 
+/*
 // Add data to levelDB with key/value pair
   function addLevelDBData(key,value){
     db.put(key, value, function(err) {
@@ -41,7 +42,7 @@ const db = level(chainDB);
                 });
             });
   };
-
+/*
 
 /* ===== Block Class ==============================
 |  Class with a constructor for block 			   |
@@ -84,13 +85,12 @@ class Blockchain{
   }
     
   async mineBlock(){
-
+        console.log("mining block");
         let l = await this.getBlockHeight();
-        newBlock.height = l;
-        console.log('new block height is'+l); 
-
         let prev = await this.getBlock(l-1);
 
+        newBlock.height = l;
+        console.log('new block height is'+l);
         // UTC timestamp
         newBlock.time = new Date().getTime().toString().slice(0,-3);
           
@@ -123,29 +123,27 @@ class Blockchain{
  
     // get block
     getBlock(blockHeight){
-      console.log('getting block with key'+blockHeight);
-      // return object as a single string
-      return new Promise((resolve, reject) => {
-            db.get(blockHeight, function(err, value) {
-                if (err) return console.log('Not found!', err);
-                resolve(value);
-            });
-        })
-    }
-
+     // return object as a single string
+     return this.chain.get(blockHeight)
+     .then(block => JSON.parse(block))
+     .catch(err=>console.log("Can not get block",err));
+     // return JSON.parse(JSON.stringify(this.chain[blockHeight]));
+   }
 
 
 
     // validate block
-    validateBlock(blockHeight){
+    async validateBlock(blockHeight){
       // get block object
-      let block = this.getBlock(blockHeight);
+      let block = await this.getBlock(blockHeight);
       // get block hash
       let blockHash = block.hash;
+     
       // remove block hash to test block integrity
-      block.hash = '';
+      block.hash = "";
       // generate block hash
       let validBlockHash = SHA256(JSON.stringify(block)).toString();
+
       // Compare
       if (blockHash===validBlockHash) {
           return true;
@@ -153,29 +151,34 @@ class Blockchain{
           console.log('Block #'+blockHeight+' invalid hash:\n'+blockHash+'<>'+validBlockHash);
           return false;
         }
-    }
+}
 
    // Validate blockchain
-    validateChain(){
-      let errorLog = [];
-      for (var i = 0; i < this.chain.length-1; i++) {
+    async validateChain(){
+        let errorLog = [];
+        let lengthChain = await this.getBlockHeight(); 
+        for (let i = 0; i < lengthChain-1; i++) {
         // validate block
-        if (!this.validateBlock(i))errorLog.push(i);
+          if (!this.validateBlock(i)) errorLog.push(i);
         // compare blocks hash link
-        let blockHash = this.chain[i].hash;
-        let previousHash = this.chain[i+1].previousBlockHash;
-        if (blockHash!==previousHash) {
+          let currentBlock = await this.getBlock(i);
+          let previousBlock = await this.getBlock(i+1)
+
+          let blockHash = currentBlock.hash;
+          let previousHash = previousBlock.previousBlockHash;
+          if (blockHash!==previousHash) {
           errorLog.push(i);
         }
       }
-      if (errorLog.length>0) {
-        console.log('Block errors = ' + errorLog.length);
-        console.log('Blocks: '+errorLog);
+        if (errorLog.length>0) {
+          console.log('Block errors = ' + errorLog.length);
+          console.log('Blocks: '+errorLog);
       } else {
-        console.log('No errors detected');
+          console.log('No errors detected');
       }
-    }
 }
+}
+
 
 let myBlockChain = new Blockchain();
 (function theLoop (i) {
