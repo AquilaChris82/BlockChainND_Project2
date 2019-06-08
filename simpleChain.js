@@ -55,6 +55,12 @@ class Block{
      this.time = 0,
      this.previousBlockHash = ""
     }
+
+  static genesisBlock() {
+      let genesisBlock = new this("First block in the chain - Genesis block");
+      genesisBlock.hash = SHA256(JSON.stringify(genesisBlock)).toString(); 
+      return genesisBlock; 
+    }
 }
 
 /* ===== Blockchain Class ==========================
@@ -64,50 +70,38 @@ class Block{
 class Blockchain{
   constructor(){
     this.chain = level('./blockchaindata');
-    this.addBlock(new Block("First block in the chain - Genesis block"));
+    this.chain.put(0,JSON.stringify(Block.genesisBlock()));
   }
 
-//this.chain.put(0,JSON.stringify(Block.genesisBlock()))
+
 
 
   // Add new block
-  addBlock(newBlock){
+  async addBlock(newBlock){
+        let minedBlock = await this.mineBlock(newBlock)
+            this.chain.put(minedBlock.height,JSON.stringify(minedBlock))
+            return minedBlock;
+  }
     
-    // Block height
-    //newBlock.height = this.chain.length;
-    return new Promise(function(resolve, reject){
-        console.log("getting Block height");
-        
-        let h = getBlockHeight();
-        if (h){
-          resolve(h);
-        } 
-      }).then(function(h){
-        newBlock.height = h;
-      }).catch(function(){console.log("height error!")})
-    
-    
-    // UTC timestamp
-    newBlock.time = new Date().getTime().toString().slice(0,-3);
-    
-    // previous block hash  
-    return new Promise(function(resolve, reject) {
-        var prev = getBlock(newBlock.height-1);
-        if (prev) {
-          resolve(prev);
-        }
-      }).then(function(prev){
-        newBlock.previousBlockHash = prev.hash;
-      }).catch(function(){consol.log("get Block error!")})
-    
-    // Block hash with SHA256 using newBlock and converting to a string
-    newBlock.hash = SHA256(JSON.stringify(newBlock)).toString();
-    
-    // Add block to the chain
-    this.chain.put(newBlock.height, JSON.stringify(NewBlock));
-    console.log('block added!');
-    return NewBlock;
-};
+  async mineBlock(){
+
+        let l = await this.getBlockHeight();
+        newBlock.height = l;
+        console.log('new block height is'+l); 
+
+        let prev = await this.getBlock(l-1);
+
+        // UTC timestamp
+        newBlock.time = new Date().getTime().toString().slice(0,-3);
+          
+        // previous block hash
+        newBlock.previousBlockHash = prev.hash; 
+        console.log('previous block hash is' + prev.hash);
+
+        // Block hash with SHA256 using newBlock and converting to a string
+        newBlock.hash = SHA256(JSON.stringify(newBlock)).toString();  
+        return newBlock; 
+  }
 
 
   // Get block height
@@ -129,6 +123,7 @@ class Blockchain{
  
     // get block
     getBlock(blockHeight){
+      console.log('getting block with key'+blockHeight);
       // return object as a single string
       return new Promise((resolve, reject) => {
             db.get(blockHeight, function(err, value) {
