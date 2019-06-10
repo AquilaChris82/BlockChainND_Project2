@@ -1,6 +1,6 @@
 # Blockchain Nanodegree - Project 2 - Web API to Private Blockchain
 
-A Web API to access a private blockchain persisted with leveldb.
+A Web API implemented in Expressjs to access a private blockchain persisted with leveldb.
 
 ## Getting Started
 
@@ -14,6 +14,7 @@ body-parser
 crypto-js  
 
 ### Executing
+Web API is implemented in Expressjs  
 Run app.js will initialise a web server at port 8000
 
 ### API Endpoints
